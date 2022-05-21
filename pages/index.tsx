@@ -42,7 +42,7 @@ const Home: NextPage = () => {
           <li><Link href='/onnx'>onnx test page</Link></li>
         </ul>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} style={{ margin: '32px 0'}}>
           <fieldset>
             <div>
               <label htmlFor="upload">Upload:</label>
@@ -63,10 +63,16 @@ const Home: NextPage = () => {
           </fieldset>
         </form>
 
+        <div style={{ marginBottom: 32 }}>
+          <p>Face to search for: </p>
+          <img src={url} alt="" style={{ width: 300, height: 'auto' }}/>
+        </div>
+        <p>Search Results: </p>
         {data && (
-          <div style={{ margin: '32px 0' }}>
-            {data.map((targetFace) => (
+          <div style={{ marginBottom: 32 }}>
+            {data.map((targetFace, index) => (
               <div key={targetFace.id}>
+                {data.length > 1 && <p>Result for face {index+1}</p>}
                 {targetFace.map(({ face, score }) => (
                   <div style={{ display: 'flex', margin: 16 }} key={targetFace.id + face.id}>
                     <Image height={face.photo.height * 200 / face.photo.width} width={200} style={{ height: 'auto', width: 200 }} alt="" src={API_URL + face.photo.url} />
