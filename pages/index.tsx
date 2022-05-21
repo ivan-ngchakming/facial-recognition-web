@@ -11,7 +11,7 @@ const Home: NextPage = () => {
   const [url, setUrl] = useState(
     "https://image.tmdb.org/t/p/original/wA1ZT3GSWvRjcJP96VRRARs9zEe.jpg"
   );
-  const [data, setData] = useState();
+  const [data, setData] = useState<any>();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -70,10 +70,10 @@ const Home: NextPage = () => {
         <p>Search Results: </p>
         {data && (
           <div style={{ marginBottom: 32 }}>
-            {data.map((targetFace, index) => (
+            {data.map((targetFace: any, index: number) => (
               <div key={targetFace.id}>
                 {data.length > 1 && <p>Result for face {index+1}</p>}
-                {targetFace.map(({ face, score }) => (
+                {targetFace.map(({ face, score }: any) => (
                   <div style={{ display: 'flex', margin: 16 }} key={targetFace.id + face.id}>
                     <Image height={face.photo.height * 200 / face.photo.width} width={200} style={{ height: 'auto', width: 200 }} alt="" src={API_URL + face.photo.url} />
                     <div style={{ margin: 16 }}>
