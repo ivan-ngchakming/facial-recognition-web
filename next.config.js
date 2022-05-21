@@ -4,6 +4,12 @@ const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   reactStrictMode: true,
+  images: {
+    domains: [
+      'localhost',
+      'facial-recognition-api.ivan0313.tk',
+    ],
+  },
 
   webpack: (config, {}) => {
     config.resolve.extensions.push(".ts", ".tsx");

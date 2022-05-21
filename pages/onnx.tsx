@@ -1,4 +1,5 @@
 import type { NextPage } from "next";
+import Link from "next/link";
 import * as ort from "onnxruntime-web";
 import { useEffect, useState } from "react";
 
@@ -37,6 +38,12 @@ const Page: NextPage = () => {
   return (
     <div className={styles.container}>
       <main className={styles.main}>
+        <h3>Links</h3>
+        <ul>
+          <li><Link href='/'>Face search page</Link></li>
+          <li><Link href='/onnx'>onnx test page</Link></li>
+        </ul>
+
         <h2>{status}</h2>
         {session && (
           <div>
