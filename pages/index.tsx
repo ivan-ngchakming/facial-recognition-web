@@ -102,16 +102,17 @@ const Home: NextPage = () => {
                     style={{ display: "flex", margin: 16 }}
                     key={targetFace.id + face.id}
                   >
-                    <Image
-                      height={(face.photo.height * 200) / face.photo.width}
-                      width={200}
+                    <img
                       style={{ height: "auto", width: 200 }}
                       alt=""
-                      src={API_URL + face.photo.url}
+                      src={face.photo.url.startsWith('/static/') ? API_URL + face.photo.url : face.photo.url}
                     />
                     <div style={{ margin: 16 }}>
-                      <h3>{face.id}</h3>
-                      <div key={targetFace.id + face.id}>score: {score}</div>
+                      <h3>{face.profile.name}</h3>
+                      <table>
+                        <tr><td><b>id: </b></td><td>{face.id}</td></tr>
+                        <tr><td><b>score: </b></td><td>{score}</td></tr>
+                      </table>
                     </div>
                   </div>
                 ))}
