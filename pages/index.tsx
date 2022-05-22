@@ -2,8 +2,9 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "../styles/Home.module.css";
+import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -11,21 +12,35 @@ const Home: NextPage = () => {
   const [url, setUrl] = useState(
     "https://image.tmdb.org/t/p/original/wA1ZT3GSWvRjcJP96VRRARs9zEe.jpg"
   );
+  const [file, setFile] = useState<any>();
   const [data, setData] = useState<any>();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    fetch(API_URL + `/face-search?url=${encodeURIComponent(url)}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res.data);
-      });
+
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    const res: any = await axios.post(API_URL + `/photo-upload`, formData);
+    setUrl(API_URL + res.data.url);
+    handleSubmit();
   };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement> | null = null) => {
+    if (event) event.preventDefault();
+
+    setIsLoading(true);
+    setData(null)
+    const data = await axios.get(API_URL + `/face-search?url=${encodeURIComponent(url)}`)
+    setData(data.data);
+  };
+
+  useEffect(() => {
+    if (data) {
+      setIsLoading(false);
+    }
+  }, [data])
 
   return (
     <div className={styles.container}>
@@ -38,44 +53,62 @@ const Home: NextPage = () => {
       <main className={styles.main}>
         <h3>Links</h3>
         <ul>
-          <li><Link href='/'>Face search page</Link></li>
-          <li><Link href='/onnx'>onnx test page</Link></li>
+          <li>
+            <Link href="/">Face search page</Link>
+          </li>
+          <li>
+            <Link href="/onnx">onnx test page</Link>
+          </li>
         </ul>
 
-        <form onSubmit={handleSubmit} style={{ margin: '32px 0'}}>
-          <fieldset>
-            <div>
-              <label htmlFor="upload">Upload:</label>
-              <input type="file" disabled id="upload" />
-            </div>
+        <form onSubmit={handleUpload} style={{ margin: "32px 0" }}>
+          <div>
+            <label htmlFor="upload">Upload:</label>
+            <input
+              type="file"
+              id="upload"
+              onChange={(e: any) => setFile(e.target.files[0])}
+            />
+          </div>
+          <button type="submit" disabled={!file}>
+            Upload
+          </button>
+        </form>
 
-            <div>
-              <label htmlFor="url">URL:</label>
-              <input
-                type="text"
-                id="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-            </div>
-
-            <button type="submit">Search</button>
-          </fieldset>
+        <form onSubmit={handleSubmit} style={{ margin: "32px 0" }}>
+          <label htmlFor="url">URL: </label>
+          <input
+            type="text"
+            id="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+          <button type="submit">Search</button>
         </form>
 
         <div style={{ marginBottom: 32 }}>
           <p>Face to search for: </p>
-          <img src={url} alt="" style={{ width: 300, height: 'auto' }}/>
+          <img src={url} alt="" style={{ width: 300, height: "auto" }} />
         </div>
         <p>Search Results: </p>
+        {isLoading && <p>Loading...</p>}
         {data && (
           <div style={{ marginBottom: 32 }}>
             {data.map((targetFace: any, index: number) => (
               <div key={targetFace.id}>
-                {data.length > 1 && <p>Result for face {index+1}</p>}
+                {data.length > 1 && <p>Result for face {index + 1}</p>}
                 {targetFace.map(({ face, score }: any) => (
-                  <div style={{ display: 'flex', margin: 16 }} key={targetFace.id + face.id}>
-                    <Image height={face.photo.height * 200 / face.photo.width} width={200} style={{ height: 'auto', width: 200 }} alt="" src={API_URL + face.photo.url} />
+                  <div
+                    style={{ display: "flex", margin: 16 }}
+                    key={targetFace.id + face.id}
+                  >
+                    <Image
+                      height={(face.photo.height * 200) / face.photo.width}
+                      width={200}
+                      style={{ height: "auto", width: 200 }}
+                      alt=""
+                      src={API_URL + face.photo.url}
+                    />
                     <div style={{ margin: 16 }}>
                       <h3>{face.id}</h3>
                       <div key={targetFace.id + face.id}>score: {score}</div>
