@@ -65,7 +65,7 @@ const Home: NextPage = () => {
           </li>
         </ul>
 
-        <form onSubmit={handleUpload} style={{ margin: "32px 0" }}>
+        <form onSubmit={handleUpload} style={{ margin: "32px 0", display: 'none' }}>
           <div>
             <label htmlFor="upload">Upload:</label>
             <input
