@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "../styles/Home.module.css";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -15,6 +15,7 @@ const Home: NextPage = () => {
   const [file, setFile] = useState<any>();
   const [data, setData] = useState<any>();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<AxiosError<any,any>|null>()
 
   const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -34,17 +35,26 @@ const Home: NextPage = () => {
 
     setIsLoading(true);
     setData(null);
-    const data = await axios.get(
-      API_URL + `/search/face?url=${encodeURIComponent(url)}`
-    );
-    setData(data.data);
+    setError(null);
+
+    try {
+      const data = await axios.get(
+        API_URL + `/search/face?url=${encodeURIComponent(url)}`
+      );
+      setData(data.data);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof AxiosError) {
+        setError(error);
+      }
+    }
   };
 
   useEffect(() => {
-    if (data) {
+    if (data || error) {
       setIsLoading(false);
     }
-  }, [data]);
+  }, [data, error]);
 
   return (
     <div className={styles.container}>
@@ -96,6 +106,8 @@ const Home: NextPage = () => {
         </div>
         <p>Search Results: </p>
         {isLoading && <p>Loading...</p>}
+        {error && <p>{error.message}</p>}
+        {error?.response?.data.error && <p>{error.response.data.error}</p>}
         {data && data.length === 0 && <p>No face found :(</p>}
         {data && (
           <div style={{ marginBottom: 32 }}>
