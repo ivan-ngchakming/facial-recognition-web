@@ -27,12 +27,16 @@ const Home: NextPage = () => {
     handleSubmit();
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement> | null = null) => {
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement> | null = null
+  ) => {
     if (event) event.preventDefault();
 
     setIsLoading(true);
-    setData(null)
-    const data = await axios.get(API_URL + `/face-search?url=${encodeURIComponent(url)}`)
+    setData(null);
+    const data = await axios.get(
+      API_URL + `/search/face?url=${encodeURIComponent(url)}`
+    );
     setData(data.data);
   };
 
@@ -40,7 +44,7 @@ const Home: NextPage = () => {
     if (data) {
       setIsLoading(false);
     }
-  }, [data])
+  }, [data]);
 
   return (
     <div className={styles.container}>
@@ -92,6 +96,7 @@ const Home: NextPage = () => {
         </div>
         <p>Search Results: </p>
         {isLoading && <p>Loading...</p>}
+        {data && data.length === 0 && <p>No face found :(</p>}
         {data && (
           <div style={{ marginBottom: 32 }}>
             {data.map((targetFace: any, index: number) => (
@@ -105,13 +110,27 @@ const Home: NextPage = () => {
                     <img
                       style={{ height: "auto", width: 200 }}
                       alt=""
-                      src={face.photo.url.startsWith('/static/') ? API_URL + face.photo.url : face.photo.url}
+                      src={
+                        face.photo.url.startsWith("/static/")
+                          ? API_URL + face.photo.url
+                          : face.photo.url
+                      }
                     />
                     <div style={{ margin: 16 }}>
                       <h3>{face.profile.name}</h3>
                       <table>
-                        <tr><td><b>id: </b></td><td>{face.id}</td></tr>
-                        <tr><td><b>score: </b></td><td>{score}</td></tr>
+                        <tr>
+                          <td>
+                            <b>id: </b>
+                          </td>
+                          <td>{face.id}</td>
+                        </tr>
+                        <tr>
+                          <td>
+                            <b>score: </b>
+                          </td>
+                          <td>{score}</td>
+                        </tr>
                       </table>
                     </div>
                   </div>
