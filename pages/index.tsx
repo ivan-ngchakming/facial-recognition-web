@@ -15,17 +15,29 @@ const Home: NextPage = () => {
   const [file, setFile] = useState<any>();
   const [data, setData] = useState<any>();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<AxiosError<any,any>|null>()
+  const [error, setError] = useState<AxiosError<any, any> | null>();
 
   const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    setIsLoading(true);
+    setData(null);
+    setError(null);
+
     const formData = new FormData();
     formData.append("file", file, file.name);
 
-    const res: any = await axios.post(API_URL + `/photo-upload`, formData);
-    setUrl(API_URL + res.data.url);
-    handleSubmit();
+    try {
+      const res: any = await axios.post(API_URL + `/photos/upload`, formData);
+      setUrl(API_URL + res.data.url);
+      handleSubmit();
+    } catch (error) {
+      console.error(error);
+      if (error instanceof AxiosError) {
+        setError(error);
+        setIsLoading(false);
+      }
+    }
   };
 
   const handleSubmit = async (
@@ -39,7 +51,7 @@ const Home: NextPage = () => {
 
     try {
       const data = await axios.get(
-        API_URL + `/search/face?url=${encodeURIComponent(url)}`
+        API_URL + `/faces/search?url=${encodeURIComponent(url)}`
       );
       setData(data.data);
     } catch (error) {
@@ -75,7 +87,7 @@ const Home: NextPage = () => {
           </li>
         </ul>
 
-        <form onSubmit={handleUpload} style={{ margin: "32px 0", display: 'none' }}>
+        <form onSubmit={handleUpload} style={{ margin: "32px 0" }}>
           <div>
             <label htmlFor="upload">Upload:</label>
             <input
@@ -84,7 +96,7 @@ const Home: NextPage = () => {
               onChange={(e: any) => setFile(e.target.files[0])}
             />
           </div>
-          <button type="submit" disabled={!file}>
+          <button type="submit" disabled={!file || isLoading}>
             Upload
           </button>
         </form>
@@ -97,7 +109,9 @@ const Home: NextPage = () => {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
-          <button type="submit">Search</button>
+          <button type="submit" disabled={isLoading}>
+            Search
+          </button>
         </form>
 
         <div style={{ marginBottom: 32 }}>
