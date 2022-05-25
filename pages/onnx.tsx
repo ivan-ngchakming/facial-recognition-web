@@ -1,5 +1,6 @@
+import axios from "axios";
 import type { NextPage } from "next";
-import Link from "next/link";
+import Navbar from "../components/Navbar";
 import * as ort from "onnxruntime-web";
 import { useEffect, useState } from "react";
 
@@ -13,11 +14,19 @@ const Page: NextPage = () => {
 
   const initModel = async () => {
     try {
+      const modelBuffer = await axios.get<Uint8Array>(`${API_URL}/models/buffalo_l/det_10g.onnx`, {
+        responseType: 'arraybuffer',
+        withCredentials: false,
+      })
+      console.log(modelBuffer)
+
+      // `${API_URL}/models/buffalo_l/w600k_r50.onnx`,
       const _session = await ort.InferenceSession.create(
-        `${API_URL}/models/buffalo_l/w600k_r50.onnx`,
+        modelBuffer.data,
         { logSeverityLevel: 1 }
       );
       setSession(_session);
+
     } catch (error) {
       console.error(error);
     }
@@ -38,11 +47,7 @@ const Page: NextPage = () => {
   return (
     <div className={styles.container}>
       <main className={styles.main}>
-        <h3>Links</h3>
-        <ul>
-          <li><Link href='/'>Face search page</Link></li>
-          <li><Link href='/onnx'>onnx test page</Link></li>
-        </ul>
+        <Navbar />        
 
         <h2>{status}</h2>
         {session && (

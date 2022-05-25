@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "../styles/Home.module.css";
 import axios, { AxiosError } from "axios";
+import Navbar from "../components/Navbar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -77,15 +78,7 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        <h3>Links</h3>
-        <ul>
-          <li>
-            <Link href="/">Face search page</Link>
-          </li>
-          <li>
-            <Link href="/onnx">onnx test page</Link>
-          </li>
-        </ul>
+        <Navbar />
 
         <form onSubmit={handleUpload} style={{ margin: "32px 0" }}>
           <div>
@@ -121,7 +114,7 @@ const Home: NextPage = () => {
         <p>Search Results: </p>
         {isLoading && <p>Loading...</p>}
         {error && <p>{error.message}</p>}
-        {error?.response?.data.error && <p>{error.response.data.error}</p>}
+        {error?.response?.data?.error && <p>{error.response.data.error}</p>}
         {data && data.length === 0 && <p>No face found :(</p>}
         {data && (
           <div style={{ marginBottom: 32 }}>

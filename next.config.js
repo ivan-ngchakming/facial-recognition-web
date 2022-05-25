@@ -10,10 +10,10 @@ module.exports = {
       'facial-recognition-api.ivan0313.tk',
     ],
   },
-
+  webpack5: true,
   webpack: (config, {}) => {
     config.resolve.extensions.push(".ts", ".tsx");
-    config.resolve.fallback = { fs: false };
+    config.resolve.fallback = { fs: false, path:false, "crypto": false };
 
     config.plugins.push(
       new NodePolyfillPlugin(),

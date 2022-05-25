@@ -9,9 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@techstark/opencv-js": "^4.5.5-release.2",
     "axios": "^0.27.2",
     "next": "12.1.6",
     "onnxruntime-web": "^1.11.0",
+    "opencv-react": "^0.0.5",
     "react": "18.1.0",
     "react-dom": "18.1.0"
   },
