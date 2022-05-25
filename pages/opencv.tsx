@@ -116,19 +116,26 @@ export default function Home() {
       height = Math.round(inputHeight / stride[idx]);
       width = Math.round(inputWeight / stride[idx]);
 
-      // TODO: get anchorCenters with key (height, width, stride) from cache if possible
-      let center;
-      const anchorCenters = new Array<Float32Array>(
-        height * width * numAnchors
-      );
-      for (let i = 0; i < anchorCenters.length; i++) {
-        center = new Float32Array(2);
-        center[0] = (((i / 2) | 0) % height) * stride[idx];
-        center[1] = ((((i / 2) | 0) / height) | 0) * stride[idx];
-        anchorCenters[i] = center;
-      }
+      // // TODO: get anchorCenters with key (height, width, stride) from cache if possible
+      // let center;
+      // const anchorCenters = new Array<Float32Array>(
+      //   height * width * numAnchors
+      // );
+      // for (let i = 0; i < anchorCenters.length; i++) {
+      //   center = new Float32Array(2);
+      //   center[0] = (((i / 2) | 0) % height) * stride[idx];
+      //   center[1] = ((((i / 2) | 0) / height) | 0) * stride[idx];
+      //   anchorCenters[i] = center;
+      // }
+      // // TODO: cache anchor centers if cache is not full
 
-      // TODO: cache anchor centers if cache is not full
+      const getAnchorCenter = (x: number, i: number, height: number) => {
+        if (x === 0) {
+          return (((i / 2) | 0) % height) * stride[idx];
+        } else {
+          return ((((i / 2) | 0) / height) | 0) * stride[idx];
+        }
+      }
 
       const posIdxs = [];
 
@@ -145,10 +152,10 @@ export default function Home() {
           ]);
 
           bboxes.push([
-            anchorCenters[i][0] - bboxPreds[i * 4 + 0],
-            anchorCenters[i][1] - bboxPreds[i * 4 + 1],
-            anchorCenters[i][0] + bboxPreds[i * 4 + 2],
-            anchorCenters[i][1] + bboxPreds[i * 4 + 3],
+            getAnchorCenter(0, i, height) - bboxPreds[i * 4 + 0],
+            getAnchorCenter(1, i, height) - bboxPreds[i * 4 + 1],
+            getAnchorCenter(0, i, height) + bboxPreds[i * 4 + 2],
+            getAnchorCenter(1, i, height) + bboxPreds[i * 4 + 3],
           ]);
         }
       }
@@ -200,7 +207,8 @@ export default function Home() {
       cv.BORDER_CONSTANT,
       s
     );
-    
+    newMat.delete();
+
     // // TODO: Remove for debugging only
     // await cv.imshow(canvas, detImage);
     // debugger
@@ -210,7 +218,7 @@ export default function Home() {
     detImageRef.current = detImage;
 
     console.time("forward");
-    const { scores, bboxes } = await forward(detImage, scoreThreshold);
+    const { bboxes } = await forward(detImage, scoreThreshold);
     console.timeEnd("forward");
 
     const ctx = canvas.getContext("2d");
@@ -229,6 +237,8 @@ export default function Home() {
 
     const picks = nms(bboxRects, nmsThreshold);
 
+    // const scoreVector = new cv.FloatVector();
+    // const finalIdxs = new cv.IntVector();
     // cv.NMSBoxes(bboxRects, scoreVector, scoreThreshold, nmsThreshold, finalIdxs);
 
     for (let bbox of picks) {
