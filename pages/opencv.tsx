@@ -39,17 +39,28 @@ export default function Home() {
 
   function handleFileChange(e) {
     const files = e.target.files;
-    const img = imgRef.current;
-    if (!files || files.length === 0 || !img) {
+    const image = imgRef.current;
+    const canvas = canvasRef.current;
+    if (!files || files.length === 0 || !image || !canvas) {
       return;
+    }
+
+    image.onload = async () => {
+      let mat = cv.imread(image);
+      if (mat.rows < mat.cols) {
+        image.style.height = 'auto';
+        image.style.width = '640px';
+        mat = cv.imread(image);
+      }
+      await cv.imshow(canvas, mat);
     }
 
     const file = files[0];
     let fr = new FileReader();
     fr.readAsDataURL(file);
-    fr.onload = (event: ProgressEvent<FileReader>) => {
+    fr.onload = async (event: ProgressEvent<FileReader>) => {
       if (event.target?.readyState === FileReader.DONE) {
-        img.src = event.target.result;
+        image.src = event.target.result;
       }
     };
   }
@@ -92,9 +103,7 @@ export default function Home() {
     const netOuts = await session.run({ "input.1": tensor });
 
     const stride = [8, 16, 32];
-    // for (let idx = 0; idx < 3; idx++) {
-    for (let idx = 1; idx < 2; idx++) {
-      // TODO: remove
+    for (let idx = 0; idx < 3; idx++) {
 
       scoresPred = netOuts[outNames[idx]].data;
       bboxPreds = Float32Array.from(netOuts[outNames[idx + fmc]].data);
@@ -170,7 +179,7 @@ export default function Home() {
       newWidth = Math.round(newHeight / imageRatio);
     } else {
       newWidth = 640;
-      newHeight = Math.round(newWidth / imageRatio);
+      newHeight = Math.round(newWidth * imageRatio);
     }
 
     const detScale = newHeight / mat.rows;
@@ -185,12 +194,16 @@ export default function Home() {
       newMat,
       detImage,
       0,
-      0,
       640 - newHeight,
+      0,
       640 - newWidth,
       cv.BORDER_CONSTANT,
       s
     );
+    
+    // // TODO: Remove for debugging only
+    // await cv.imshow(canvas, detImage);
+    // debugger
 
     // cv.cvtColor(detImage, detImage, cv.COLOR_RGB2BGR);
 
@@ -218,11 +231,12 @@ export default function Home() {
 
     // cv.NMSBoxes(bboxRects, scoreVector, scoreThreshold, nmsThreshold, finalIdxs);
 
-    const bbox = picks[0];
-    ctx.beginPath();
-    ctx.rect(bbox.x1, bbox.y1, bbox.width, bbox.height);
-    ctx.strokeStyle = "green";
-    ctx.stroke();
+    for (let bbox of picks) {
+      ctx.beginPath();
+      ctx.rect(bbox.x1, bbox.y1, bbox.width, bbox.height);
+      ctx.strokeStyle = "red";
+      ctx.stroke();
+    }
   }
 
   useEffect(() => {

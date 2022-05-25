@@ -1,3 +1,7 @@
+
+/**
+ * source: https://github.com/erceth/non-maximum-suppression/blob/master/nms.js
+ */
 const nms = (foundLocations, overlapThresh) => {
   if (foundLocations.length === 0) {
     return [];
