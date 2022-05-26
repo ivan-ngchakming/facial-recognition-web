@@ -35,6 +35,14 @@ module.exports = {
             from: "./node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm",
             to: "static/chunks/pages",
           },
+          {
+            from: "./node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm",
+            to: "static/chunks/pages/opencv",
+          },
+          {
+            from: "./node_modules/@techstark/opencv-js/dist/opencv.js",
+            to: "static/chunks/pages/opencv",
+          },
         ],
       })
     );
