@@ -1,43 +1,13 @@
-import cv from "@techstark/opencv-js";
-import axios from "axios";
 import Head from "next/head";
-import * as ort from "onnxruntime-web";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useCallback  } from "react";
 import Navbar from "../../components/Navbar";
-import { detect } from "../../utils";
 import styles from "../../styles/Home.module.css";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 export default function Home() {
+  const workerRef = useRef<Worker>()
   const canvasRef = useRef<HTMLCanvasElement>();
-  const imgRef = useRef<HTMLImageElement>();
+  const bboxsRef = useRef<any[]>();  // TODO: add type
   const videoRef = useRef<HTMLVideoElement>();
-  const [session, setSession] = useState<ort.InferenceSession>();
-  const [status, setStatus] = useState("");
-
-  const initModel = async () => {
-    // buffalo_s/det_500m.ort
-    // buffalo_s/det_500m.with_runtime_opt.ort
-    // buffalo_l/det_10g.ort
-    try {
-      const modelBuffer = await axios.get<Uint8Array>(
-        `${API_URL}/models/buffalo_s/det_500m.with_runtime_opt.ort`,
-        {
-          responseType: "arraybuffer",
-          withCredentials: false,
-        }
-      );
-
-      const _session = await ort.InferenceSession.create(modelBuffer.data);
-      setSession(_session);
-    } catch (error) {
-      console.error(error);
-      if (error instanceof Error) {
-        setStatus(error.message);
-      }
-    }
-  };
 
   function handleLoadedMetadata(event) {
     const canvas = canvasRef.current;
@@ -52,60 +22,30 @@ export default function Home() {
     setTimeout(processVideo, 0);
   }
 
-  async function runDetection() {
-    const scoreThreshold = 0.5;
-    const nmsThreshold = 0.4;
-
-    let image = imgRef.current;
-    const canvas = canvasRef.current;
-    if (!canvas || !image || !session) {
-      return;
-    }
-
-    const picks = await detect(image, session, scoreThreshold, nmsThreshold);
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return;
-    }
-    for (let bbox of picks) {
-      ctx.beginPath();
-      ctx.rect(bbox.x1, bbox.y1, bbox.width, bbox.height);
-      ctx.strokeStyle = "red";
-      ctx.stroke();
-    }
-  }
-
-  const streaming = true;
   const FPS = 30;
 
-  function processVideo() {
+  async function processVideo() {
+    let begin = Date.now();
+
     const video = videoRef.current;
-    if (!video) {
+    const bboxs = bboxsRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) {
       return;
     }
-    
-    const src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-    const dst = new cv.Mat(video.height, video.width, cv.CV_8UC1);
-    let cap = new cv.VideoCapture(video);
-    try {
-      if (!streaming) {
-        // clean and stop.
-        src.delete();
-        dst.delete();
-        return;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, video.width, video.height);
+    if (bboxs) {
+      for (let bbox of bboxs) {
+        ctx.beginPath();
+        ctx.rect(bbox.x1, bbox.y1, bbox.width, bbox.height);
+        ctx.strokeStyle = "red";
+        ctx.stroke();
       }
-      let begin = Date.now();
-      // start processing.
-      cap.read(src);
-      cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
-      cv.imshow("canvasOutput", dst);
-      // schedule the next one.
-      let delay = 1000 / FPS - (Date.now() - begin);
-      setTimeout(processVideo, delay);
-    } catch (err) {
-      console.error(err);
     }
+    
+    let delay = 1000 / FPS - (Date.now() - begin);
+    setTimeout(processVideo, delay);
   }
 
   function startVideo() {
@@ -125,23 +65,45 @@ export default function Home() {
       });
   }
 
-  useEffect(() => {
-    setStatus("Loading model...");
-    initModel();
-
-    console.log('Initializing opencvjs runtime...');
-    cv['onRuntimeInitialized']=()=>{
-      // do all your work here
-      console.log('opencvjs runtime initialized');
-    };
-  }, []);
-
-  useEffect(() => {
-    if (session) {
-      setStatus("Model loaded!");
-      console.log(session);
+  const handleWork = useCallback(async () => {
+    const canvas = canvasRef.current;
+    const worker = workerRef.current;
+    const video = videoRef.current;
+    if (!canvas || !worker || !video) {
+      return;
     }
-  }, [session]);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
+    
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    worker.postMessage({ msg: 'detect', imageData });
+  }, [])
+
+  useEffect(() => {
+    workerRef.current = new Worker(new URL('../../workers/detection.worker.ts', import.meta.url))
+    workerRef.current.onmessage = (event) => {
+      switch (event.data.msg) {
+        case 'detect':
+          bboxsRef.current = event.data.bboxs;
+          handleWork();
+          break;
+        case 'info':
+          console.log(event.data.info);
+          break;
+        case 'error':
+          console.error(event.data.error);
+        default:
+          console.log('Unknown message received from worker: ', event.data.msg);
+      }
+    }
+
+    return () => {
+      workerRef.current.terminate()
+    }
+  }, [])
 
   return (
     <div className={styles.container}>
@@ -155,45 +117,17 @@ export default function Home() {
         <h1>Test</h1>
         <div>
           <button onClick={startVideo}>Start Video</button>
-          <button type="button" onClick={runDetection} disabled={!session}>
-            Detect Face
-          </button>
+          <button onClick={handleWork}>Ping Worker</button>
         </div>
         <div style={{ display: "flex" }}>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <video ref={videoRef} width={680} height={680} onLoadedMetadata={handleLoadedMetadata}></video>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <canvas
-              width={640}
-              height={640}
-              style={{ margin: 32 }}
-              ref={canvasRef}
-              id="canvasOutput"
-            ></canvas>
-            <p>640 x 640</p>
-          </div>
+          <video ref={videoRef} width={680} height={680} onLoadedMetadata={handleLoadedMetadata}></video>
+          <canvas
+            width={640}
+            height={640}
+            ref={canvasRef}
+            id="canvasOutput"
+          ></canvas>
         </div>
-        <h2>{status}</h2>
-        {session && (
-          <div>
-            <pre>{JSON.stringify(session, null, 2)}</pre>
-          </div>
-        )}
       </main>
     </div>
   );
