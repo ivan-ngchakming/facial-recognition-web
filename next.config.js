@@ -10,14 +10,14 @@ module.exports = {
       'facial-recognition-api.ivan0313.tk',
     ],
   },
-  typescript: {
-    // TODO: Remove
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    // TODO: Remove
-    ignoreDuringBuilds: true,
-  },
+  // typescript: {
+  //   // TODO: Remove
+  //   ignoreBuildErrors: true,
+  // },
+  // eslint: {
+  //   // TODO: Remove
+  //   ignoreDuringBuilds: true,
+  // },
   webpack5: true,
   webpack: (config, {}) => {
     config.resolve.extensions.push(".ts", ".tsx");
@@ -34,6 +34,10 @@ module.exports = {
           {
             from: "./node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm",
             to: "static/chunks/pages",
+          },
+          {
+            from: "./node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm",
+            to: "static/chunks/pages/opencv",
           },
         ],
       })

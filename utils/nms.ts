@@ -1,15 +1,16 @@
+import { BBox } from "../types";
 
 /**
  * source: https://github.com/erceth/non-maximum-suppression/blob/master/nms.js
  */
-const nms = (foundLocations, overlapThresh) => {
-  if (foundLocations.length === 0) {
-    return [];
+const nms = (bboxes: number[][], overlapThresh: number) => {
+  if (bboxes.length === 0) {
+    return [] as BBox[];
   }
 
-  const pick = [];
+  const pick: BBox[] = [];
   
-  foundLocations = foundLocations.map(box => { // TODO: replace with vectorization
+  let candidates = bboxes.map(box => { // TODO: replace with vectorization
     return {
       x1: box[0],
       y1: box[1],
@@ -21,17 +22,17 @@ const nms = (foundLocations, overlapThresh) => {
     }
   });
 
-  foundLocations.sort((b1, b2) => {
+  candidates.sort((b1, b2) => {
     return b1.y2 - b2.y2;
   });
 
-  while (foundLocations.length > 0) {
-    let last = foundLocations[foundLocations.length - 1];
+  while (candidates.length > 0) {
+    let last = candidates[candidates.length - 1];
     pick.push(last);
     let suppress = [last];
 
-    for (let i = 0; i < foundLocations.length - 1; i ++) {
-      const box = foundLocations[i];
+    for (let i = 0; i < candidates.length - 1; i ++) {
+      const box = candidates[i];
       const xx1 = Math.max(box.x1, last.x1)
       const yy1 = Math.max(box.y1, last.y1)
       const xx2 = Math.min(box.x2, last.x2);
@@ -40,11 +41,11 @@ const nms = (foundLocations, overlapThresh) => {
       const h = Math.max(0, yy2 - yy1 + 1);
       const overlap = (w * h ) / box.area;
       if (overlap > overlapThresh) {
-        suppress.push(foundLocations[i])
+        suppress.push(candidates[i])
       }
     }
     
-    foundLocations = foundLocations.filter((box) => {
+    candidates = candidates.filter((box) => {
       return !suppress.find((supp) => {
         return supp === box;
       })
