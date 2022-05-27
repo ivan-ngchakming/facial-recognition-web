@@ -3,26 +3,28 @@ import React, { useEffect, useRef, useCallback  } from "react";
 import Navbar from "../../components/Navbar";
 import styles from "../../styles/Home.module.css";
 
+import { BBox } from "../../types";
+
+const FPS = 30;
+
 export default function Home() {
   const workerRef = useRef<Worker>()
-  const canvasRef = useRef<HTMLCanvasElement>();
-  const bboxsRef = useRef<any[]>();  // TODO: add type
-  const videoRef = useRef<HTMLVideoElement>();
-
-  function handleLoadedMetadata(event) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const bboxsRef = useRef<BBox[]>();  // TODO: add type
+  
+  function handleLoadedMetadata() {
     const canvas = canvasRef.current;
-    if (!canvas) {
+    const video = videoRef.current;
+    if (!canvas || !video) {
       return;
     }
-    const video = event.target
     video.height = video.videoHeight;
     video.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.width = video.videoWidth;
     setTimeout(processVideo, 0);
   }
-
-  const FPS = 30;
 
   async function processVideo() {
     let begin = Date.now();
@@ -34,6 +36,9 @@ export default function Home() {
       return;
     }
     const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
     ctx.drawImage(video, 0, 0, video.width, video.height);
     if (bboxs) {
       for (let bbox of bboxs) {
@@ -101,9 +106,13 @@ export default function Home() {
     }
 
     return () => {
-      workerRef.current.terminate()
+      const worker = workerRef.current;
+      if (!worker) {
+        return;
+      }
+      worker.terminate()
     }
-  }, [])
+  }, [handleWork])
 
   return (
     <div className={styles.container}>

@@ -1,6 +1,7 @@
 import type { Mat } from 'mirada';
 import * as ort from "onnxruntime-web";
 import { Tensor } from "onnxruntime-web";
+import { BBox } from '../types';
 import nms from "./nms";
 
 export function arrayMultiply(array: Float32Array, factor: number) {
@@ -10,9 +11,10 @@ export function arrayMultiply(array: Float32Array, factor: number) {
   return array;
 }
 
-async function forward(session: ort.InferenceSession, image: Mat, threshold: number) {
-  if (!session) return;
-
+async function forward(session: ort.InferenceSession, image: Mat, threshold: number): Promise<{
+  scores: (string | number | bigint)[];
+  bboxes: number[][];
+}> {
   let scores = [];
   let bboxes = [];
   let distances = [];
@@ -38,13 +40,15 @@ async function forward(session: ort.InferenceSession, image: Mat, threshold: num
   
   const tensor = new Tensor(blob.data32F, [1, 3, 640, 640]);
 
+  blob.delete();
+  
   const netOuts = await session.run({ "input.1": tensor });
 
   const stride = [8, 16, 32];
   for (let idx = 0; idx < 3; idx++) {
 
     scoresPred = netOuts[outNames[idx]].data;
-    bboxPreds = Float32Array.from(netOuts[outNames[idx + fmc]].data);
+    bboxPreds = Float32Array.from(netOuts[outNames[idx + fmc]].data as Float32Array);
     bboxPredsDims = netOuts[outNames[idx + fmc]].dims;
     // kpsPreds = netOuts[outNames[idx + fmc * 2]].data;
 
@@ -99,10 +103,10 @@ async function forward(session: ort.InferenceSession, image: Mat, threshold: num
     }
   }
 
-  return { scores, bboxes, distances };
+  return { scores, bboxes };
 }
 
-export async function detect(data: HTMLImageElement|ImageData, session: ort.InferenceSession, scoreThreshold: number, nmsThreshold: number) {
+export async function detect(data: HTMLImageElement|ImageData, session: ort.InferenceSession, scoreThreshold: number, nmsThreshold: number): Promise<BBox[]>{
   let mat;
   if (data instanceof ImageData) {
     mat = mat = cv.matFromImageData(data);
