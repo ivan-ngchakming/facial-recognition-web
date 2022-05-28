@@ -1,11 +1,10 @@
+import axios, { AxiosError } from "axios";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import styles from "../styles/Home.module.css";
-import axios, { AxiosError } from "axios";
 import Navbar from "../components/Navbar";
+import styles from "../styles/Home.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
